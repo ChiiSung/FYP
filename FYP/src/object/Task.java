@@ -1,14 +1,15 @@
 package object;
 
+import java.io.Serializable;
 import java.sql.SQLException;
 import java.util.Date;
 
-public class Task {
-	private int taskId;
-	private String taskTitle; 
-	private Date dueDate;
-	private String description;
-	private Boolean completed = false;
+public class Task implements Serializable{
+	protected int taskId;
+	protected String taskTitle; 
+	protected Date dueDate;
+	protected String description;
+	protected Boolean completed = false;
 
 	public int getTaskId() {
 		return taskId;
@@ -42,11 +43,18 @@ public class Task {
 	}
 	
 	public void saveTask(SQLConnect sql, int userId){
-		sql.savingTask(taskTitle, dueDate, description, userId);
+		sql.savingTask(taskTitle, dueDate, description, userId, completed);
 	}
 	
 	public void readTask(SQLConnect sql, User user, int userId) {
 		sql.readTask(user, userId);
+	}
+	
+	public void deleteTask(SQLConnect sql) {
+		sql.deleteTask(taskId);
+	}
+	public void editTask(SQLConnect sql) {
+		sql.editTask(this);
 	}
 	
 	public String toString() {

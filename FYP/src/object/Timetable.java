@@ -1,8 +1,9 @@
 package object;
 
+import java.io.Serializable;
 import java.util.Date;
 
-public class Timetable {
+public class Timetable implements Serializable{
 	private Course[] course;
 	private Date semStart;
 	public Course[] getCourse() {

@@ -24,6 +24,8 @@ public class User implements Serializable{
 	private String username;
 	private String email;
 	private String password;
+	private String userType;
+
 	transient private int sixDigitCode;
 	
 	//user task data
@@ -92,6 +94,19 @@ public class User implements Serializable{
 	public void setSixDigitCode(int sixDigitCode) {
 		this.sixDigitCode = sixDigitCode;
 	}
+
+	public String getUserType() {
+		return userType;
+	}
+	public void setUserType(String userType) {
+		this.userType = userType;
+	}
+	public int getTasknow() {
+		return tasknow;
+	}
+	public void setTasknow(int tasknow) {
+		this.tasknow = tasknow;
+	}
 	public Boolean Login(SQLConnect sql, User user) throws ClassNotFoundException, SQLException{
 		boolean x = sql.loginVerification(email, password, user);
 		return x;
@@ -108,7 +123,7 @@ public class User implements Serializable{
 					generateCode();
 					x = 5*60;
 				}
-				String text = "<html>The 6-digit code is send to you email already.(Maka sure you email is correct)<br>Your Email:"+ email
+				String text = "<html>The 6-digit code is send to you email already.(Maka sure you email is correct)<br>Your Email: "+ email
 				+"<br> It will expired in "+ (int)(x/60) +"min "+ x%60 +"s" +"<html>";
 				info.setText(text); 
 				x--;
@@ -149,7 +164,60 @@ public class User implements Serializable{
             message.setFrom(new InternetAddress(username));
             message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(userEmail));
             message.setSubject("Email Verification Code");
-            message.setText("Your verification code is: " + sixDigitCode);
+            
+            String htmlcode = "<!DOCTYPE html>\r\n"
+            		+ "<html lang=\"en\">\r\n"
+            		+ "<head>\r\n"
+            		+ "    <meta charset=\"UTF-8\">\r\n"
+            		+ "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\r\n"
+            		+ "    <title>Email Verification</title>\r\n"
+            		+ "    <style>\r\n"
+            		+ "        body {\r\n"
+            		+ "            font-family: Arial, sans-serif;\r\n"
+            		+ "            background-color: #f4f4f4;\r\n"
+            		+ "            margin: 0;\r\n"
+            		+ "            padding: 20px;\r\n"
+            		+ "            text-align: center;\r\n"
+            		+ "        }\r\n"
+            		+ "\r\n"
+            		+ "        .container {\r\n"
+            		+ "            background-color: #fafafa;\r\n"
+            		+ "            border-radius: 10px;\r\n"
+            		+ "            padding: 20px;\r\n"
+            		+ "            max-width: 600px;\r\n"
+            		+ "            margin: 0 auto;\r\n"
+            		+ "            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);\r\n"
+            		+ "        }\r\n"
+            		+ "\r\n"
+            		+ "        h1 {\r\n"
+            		+ "            color: #fff;\r\n"
+            		+ "            background: #4184f3;\r\n"
+            		+ "            text-align: center;\r\n"
+            		+ "        }\r\n"
+            		+ "\r\n"
+            		+ "        p {\r\n"
+            		+ "            color: #555555;\r\n"
+            		+ "            line-height: 1.6;\r\n"
+            		+ "        }\r\n"
+            		+ "\r\n"
+            		+ "        .verification-code {\r\n"
+            		+ "            font-size: 24px;\r\n"
+            		+ "            color: #007bff;\r\n"
+            		+ "            margin-top: 20px;\r\n"
+            		+ "        }\r\n"
+            		+ "    </style>\r\n"
+            		+ "</head>\r\n"
+            		+ "<body>\r\n"
+            		+ "    <div class=\"container\">\r\n"
+            		+ "    	   <h1>Email Verification</h1>\r\n"
+            		+ "        <p>Your verification code is:</p>\r\n"
+            		+ "        <div class=\"verification-code\">" + sixDigitCode + "</div>\r\n"
+            		+ "        <p>Please use this code to complete the verification process.</p>\r\n"
+            		+ "    </div>\r\n"
+            		+ "</body>\r\n"
+            		+ "</html>";
+            
+            message.setContent(htmlcode, "text/html");
 
             Transport.send(message);
 

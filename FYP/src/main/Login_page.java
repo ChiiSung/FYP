@@ -15,7 +15,6 @@ import java.awt.GridLayout;
 import java.awt.HeadlessException;
 import java.awt.Image;
 import java.awt.Insets;
-import java.awt.Label;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
@@ -28,20 +27,15 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.sql.SQLException;
 import java.util.regex.Pattern;
-
-import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
-import javax.swing.JTextArea;
 import javax.swing.JTextField;
-import javax.swing.border.Border;
 
 
 public class Login_page {
@@ -57,10 +51,6 @@ public class Login_page {
     private JPanel loginpanel;
     private JPanel registerpanel;
     Home_Page hp = null;
-    
-	private JPasswordField userPF;
-	private JTextField userTF;
-	private boolean vpf;
 	
 	static Login_page window;
 	
@@ -121,7 +111,7 @@ public class Login_page {
 		frame = new JFrame();
 		frame.setForeground(Color.RED);
 		frame.getContentPane().setBackground(new Color(240, 240, 240));
-		frame.setResizable(false);
+		frame.setResizable(true);
 		frame.setBounds(400, 150, 720, 550);
 		frame.setTitle("Calendar System for FSKTM Student");
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -180,7 +170,6 @@ public class Login_page {
         passwordField.setColumns(12);
 
         JButton loginButton = new JButton("Login");
-        JButton cancelButton = new JButton("Cancel");
         JButton registerButton = new JButton("Register");
         
         JLabel newUser = new JLabel("New User");
@@ -312,7 +301,6 @@ public class Login_page {
 
         JButton registerButton = new JButton("Register");
         JButton loginButton = new JButton("Login");
-        JButton cancelButton = new JButton("Cancel");
         
         JLabel oldUser = new JLabel("Have account already ??");
         JLabel line = new JLabel("---------------------------------------------------------------");
@@ -381,35 +369,14 @@ public class Login_page {
 
         registerButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                char[] passwordC = passwordFieldR.getPassword();
-                String password = String.valueOf(passwordC);
-                char[] CpasswordC = confirmPasswordField.getPassword();
-                String Cpassword = String.valueOf(CpasswordC);
-                //Check the empty input
-            	if(emailFieldR.getText().equals("") || password.equals("") || userField.getText().equals("") || Cpassword.equals("") ) {
-            		JOptionPane.showMessageDialog(frame, "Please input all information", "Error", JOptionPane.ERROR_MESSAGE);
-                    return;
+            	if(checkValidInput(emailFieldR, passwordFieldR, confirmPasswordField, userField)) {
+            		frame.setVisible(false);
+                    user = new User();
+                    user.setEmail(emailFieldR.getText());
+                    user.setPassword(String.valueOf(passwordFieldR.getPassword()));
+                    user.setUsername(userField.getText());
+            		verificationPage(frame, "register");
             	}
-            	
-            	//Check if email error
-            	if (!isValidEmail(emailFieldR.getText())) {
-                    JOptionPane.showMessageDialog(frame, "Invalid email address", "Error", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-
-                //Check if passwords match
-                if (!passwordFieldR.getText().equals(confirmPasswordField.getText())) {
-                    JOptionPane.showMessageDialog(frame, "Passwords do not match", "Error", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-                
-                // Check if passwords match
-                if (sql.existEmail(emailFieldR.getText())) {
-                    JOptionPane.showMessageDialog(frame, "Email have registered", "Error", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-            	frame.setVisible(false);
-            	verificationPage(frame);
             }
         });
     }
@@ -434,19 +401,23 @@ public class Login_page {
 		JButton cancelButton = new JButton("Cancel");
 		
 		submitButton.addActionListener(new ActionListener() {
-		    @Override
 		    public void actionPerformed(ActionEvent e) {
-		        // Add logic for submitting the data (e.g., sending reset password email)
-		    dialog.dispose(); // Close the dialog
+		    	if(checkValidInput(emailTextField, newPasswordField, confirmPasswordField, new JTextField("temp"))){
+		            user = new User();
+		            user.setEmail(emailTextField.getText());
+		            user.setPassword(String.valueOf(newPasswordField.getPassword()));
+		    		verificationPage(frame, "forget");
+		    		dialog.dispose();
+		    	}
 		    }
 		});
 		
 		cancelButton.addActionListener(new ActionListener() {
 		    @Override
 		    public void actionPerformed(ActionEvent e) {
-		        dialog.dispose(); // Close the dialog
-		        }
-		    });
+		        dialog.dispose(); 
+		    }
+		});
 	
 	    dialog.add(emailLabel);
 	    dialog.add(emailTextField);
@@ -463,17 +434,14 @@ public class Login_page {
 	}
 	    
     //when user click the register or forget password will use this
-	private void verificationPage(JFrame frame) {
-        user = new User();
-        user.setEmail(emailFieldR.getText());
-        user.setPassword(String.valueOf(passwordFieldR.getPassword()));
-        user.setUsername(userField.getText());
+	private void verificationPage(JFrame frame, String registerOrForget) {
 		
         JDialog vp = new JDialog();
         vp.setTitle("Verification email");
         vp.setLayout(new BorderLayout());
         
-        JLabel info = new JLabel("<html>The 6-digit code is send to you email already.<br>(Maka sure you email is correct) <br> It will expired in 5 min.<html>");
+        JLabel info = new JLabel("<html>The 6-digit code is send to you email already."
+        		+ "<br>(Maka sure you email is correct) <br> It will expired in 5 min.<html>");
         
         JTextField code = new JTextField();
         code.setColumns(24);
@@ -489,22 +457,21 @@ public class Login_page {
             	//if user enter correct verification code
                 if (user.getSixDigitCode() == Integer.parseInt(code.getText())) {
                     JOptionPane.showMessageDialog(vp, "Verification successful!\nTry login in login page");
-                    sql.register(user);//record registered user into database
                     //switch user to login page
                     cardLayout.show(cardPanel, "login");
                     emailField.setText(user.getEmail());
                     passwordField.setText(user.getPassword());
-                    //clear the register page field
-                    emailFieldR.setText(null);
-                    passwordFieldR.setText(null);
-                    userField.setText(null);
-                    confirmPasswordField.setText(null);
-                    frame.setVisible(true);
-                    vpf = true;
+                    
+                    //to know the type of verification 
+                    if(registerOrForget.equals("register")) {
+                    	afterRegister();
+                    }else if(registerOrForget.equals("forget")) {
+                    	afterForget();
+                    }
+                    
                     vp.dispose(); // Close the pop-up after successful verification
                 } else {
                     JOptionPane.showMessageDialog(vp, "Invalid verification code. Please try again.");
-                    vpf = false;
                 }
             }
         });
@@ -564,6 +531,47 @@ public class Login_page {
     	insertToFile();
     	frame.setVisible(true);
     	user = null;
+    }
+    
+    public void afterRegister() {
+    	//clear the register page field
+        emailFieldR.setText(null);
+        passwordFieldR.setText(null);
+        userField.setText(null);
+        confirmPasswordField.setText(null);
+        sql.register(user);//record registered user into database
+        frame.setVisible(true);
+    }
+    
+    public void afterForget() {
+    	sql.forgetPassword(user);//record registered user into database
+        frame.setVisible(true);
+    }
+    
+    public Boolean checkValidInput(JTextField emailFieldR, JPasswordField passwordFieldR, JPasswordField confirmPasswordField, JTextField userField) {
+        String password = String.valueOf(passwordFieldR.getPassword());
+        String Cpassword = String.valueOf(confirmPasswordField.getPassword());
+        //Check the empty input
+     	if(emailFieldR.getText().equals("") || password.equals("") || userField.getText().equals("") || Cpassword.equals("") ) {
+     		JOptionPane.showMessageDialog(frame, "Please input all information", "Error", JOptionPane.ERROR_MESSAGE);
+             return false;
+     	}
+     	//Check if email error
+     	if (!isValidEmail(emailFieldR.getText())) {
+             JOptionPane.showMessageDialog(frame, "Invalid email address", "Error", JOptionPane.ERROR_MESSAGE);
+             return false;
+         }
+         //Check if passwords match
+         if (!password.equals(Cpassword)) {
+             JOptionPane.showMessageDialog(frame, "Passwords do not match", "Error", JOptionPane.ERROR_MESSAGE);
+             return false;
+         }
+         // Check if passwords match
+         if (!userField.getText().equals("temp") && sql.existEmail(emailFieldR.getText())) {
+             JOptionPane.showMessageDialog(frame, "Email have registered", "Error", JOptionPane.ERROR_MESSAGE);
+             return false;
+         }
+         return true;
     }
     
     //check the user email correct or not
