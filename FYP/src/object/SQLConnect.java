@@ -333,6 +333,37 @@ public class SQLConnect {
 		}
 		return task;
 	}
+	
+	
+	// Admin part
+	public void readLecturer(){}
+	
+	public void deleteLecturer() {}
+	
+	public void addLeturer() {}
+	
+	public void readCourse() {}
+	
+	public void deleteCourse() {}
+	
+	public void addCourse(Course course) {
+		String command = "INSERT INTO course(courseName,courseSection,courseType,time,day,durationTime,code) VALUES(?,?,?,?,?,?,?)";
+		PreparedStatement stmt;
+		try {
+			stmt = con.prepareStatement(command);
+			stmt.setString(1,course.getCourseName());
+			stmt.setInt(2, course.getCourseSection());
+			stmt.setString(3, (String.valueOf(course.getCourseType())));
+			stmt.setTime(4, new java.sql.Time(course.getTime().getHours(), course.getTime().getMinutes(), 0));
+			stmt.setString(5,course.getDay());
+			stmt.setInt(6, course.getDurationTime());
+			stmt.setString(7, course.getCode());
+			stmt.execute();
+			stmt.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
 }
 
 

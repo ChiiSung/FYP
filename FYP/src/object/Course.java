@@ -4,12 +4,19 @@ import java.io.Serializable;
 import java.util.Date;
 
 public class Course implements Serializable{
+	private String code;
 	private String courseName;
 	private int courseSection;
 	private char courseType;
 	private Date time;
 	private String day;
-	private Date durationTime;
+	private int durationTime;
+	public String getCode() {
+		return code;
+	}
+	public void setCode(String courseId) {
+		this.code = courseId;
+	}
 	public String getCourseName() {
 		return courseName;
 	}
@@ -40,12 +47,14 @@ public class Course implements Serializable{
 	public void setDay(String day) {
 		this.day = day;
 	}
-	public Date getDurationTime() {
+	public int getDurationTime() {
 		return durationTime;
 	}
-	public void setDurationTime(Date durationTime) {
+	public void setDurationTime(int durationTime) {
 		this.durationTime = durationTime;
 	}
-	
-	
+
+	public void saveCourse(SQLConnect sql ) {
+		sql.addCourse(this);
+	}
 }
