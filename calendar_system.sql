@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- 主机： 127.0.0.1
--- 生成日期： 2024-03-02 11:02:50
+-- 生成日期： 2024-04-27 20:32:32
 -- 服务器版本： 10.4.28-MariaDB
 -- PHP 版本： 8.2.4
 
@@ -50,7 +50,8 @@ CREATE TABLE `course` (
   `courseType` enum('K','T') NOT NULL,
   `time` time NOT NULL,
   `day` enum('Sunday','Monday','Tuesday','Wednesday','Thursday') NOT NULL,
-  `durationTime` enum('2','3') NOT NULL
+  `durationTime` enum('2','3') NOT NULL,
+  `code` varchar(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -66,10 +67,22 @@ CREATE TABLE `repeattask` (
   `dueDate` datetime NOT NULL,
   `description` varchar(10000) NOT NULL,
   `completed` tinyint(1) NOT NULL,
-  `repeatType` enum('Daily','Weekly','Monthly','') NOT NULL,
+  `repeatType` enum('Daily','Weekly','Monthly') NOT NULL,
   `frequancyRepeat` int(255) NOT NULL,
   `endDate` datetime NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- 转存表中的数据 `repeattask`
+--
+
+INSERT INTO `repeattask` (`repeatID`, `userID`, `taskTitle`, `dueDate`, `description`, `completed`, `repeatType`, `frequancyRepeat`, `endDate`) VALUES
+(13, 1, 'asdf', '2024-04-19 00:00:00', 'asdf', 0, 'Daily', 2, '2024-04-21 00:00:00'),
+(14, 1, 'asdf', '2024-04-25 00:00:00', 'asdf', 0, 'Weekly', 2, '2024-05-09 00:00:00'),
+(15, 1, 'asd', '2024-04-04 00:00:00', '', 0, 'Weekly', 2, '2024-04-18 00:00:00'),
+(16, 1, 'asd', '2024-04-16 00:00:00', 'asd', 1, 'Daily', 2, '2024-04-18 00:00:00'),
+(21, 1, 'asdfadsfa', '2024-03-10 00:00:00', '', 0, 'Daily', 1, '2024-03-11 00:00:00'),
+(22, 1, 'ads', '2024-04-08 00:00:00', 'asd', 0, 'Monthly', 2, '2024-06-08 00:00:00');
 
 -- --------------------------------------------------------
 
@@ -91,7 +104,13 @@ CREATE TABLE `task` (
 --
 
 INSERT INTO `task` (`taskID`, `userID`, `taskTitle`, `dueDate`, `description`, `completed`) VALUES
-(1, 1, 'hello world', '2024-03-06 00:00:00', 'what can i ask', 1);
+(2, 1, 'gg', '2024-03-06 00:00:00', 'hailat\n', 0),
+(13, 1, '1234', '2024-03-06 00:00:00', '1234', 0),
+(20, 1, 'asd', '2024-04-07 00:00:00', 'asd', 0),
+(27, 1, 'june 的 时间', '2024-06-04 00:00:00', '为什么世界这么大\n', 0),
+(28, 1, 'testing', '2024-03-06 00:00:00', '', 0),
+(29, 1, 'hello world', '2024-03-06 00:00:00', '', 0),
+(30, 1, 'asdfasdfa', '2024-03-06 00:00:00', '', 0);
 
 -- --------------------------------------------------------
 
@@ -126,15 +145,17 @@ CREATE TABLE `user` (
   `userID` int(255) NOT NULL,
   `username` varchar(255) NOT NULL,
   `email` varchar(255) NOT NULL,
-  `password` varchar(255) NOT NULL
+  `password` varchar(255) NOT NULL,
+  `userType` enum('student','lecturer','admin') NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- 转存表中的数据 `user`
 --
 
-INSERT INTO `user` (`userID`, `username`, `email`, `password`) VALUES
-(1, 'LCS', 'lingchiisung@gmail.com', '1234');
+INSERT INTO `user` (`userID`, `username`, `email`, `password`, `userType`) VALUES
+(1, 'LCS', 'lingchiisung@gmail.com', '1234', 'student'),
+(2, 'ZX', 'zxkhoo141132@gmail.com', '123', 'student');
 
 -- --------------------------------------------------------
 
@@ -217,19 +238,19 @@ ALTER TABLE `assignment`
 -- 使用表AUTO_INCREMENT `course`
 --
 ALTER TABLE `course`
-  MODIFY `courseID` int(255) NOT NULL AUTO_INCREMENT;
+  MODIFY `courseID` int(255) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- 使用表AUTO_INCREMENT `repeattask`
 --
 ALTER TABLE `repeattask`
-  MODIFY `repeatID` int(255) NOT NULL AUTO_INCREMENT;
+  MODIFY `repeatID` int(255) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
 
 --
 -- 使用表AUTO_INCREMENT `task`
 --
 ALTER TABLE `task`
-  MODIFY `taskID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `taskID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=31;
 
 --
 -- 使用表AUTO_INCREMENT `timetable`
@@ -241,7 +262,7 @@ ALTER TABLE `timetable`
 -- 使用表AUTO_INCREMENT `user`
 --
 ALTER TABLE `user`
-  MODIFY `userID` int(255) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `userID` int(255) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- 限制导出的表
@@ -257,8 +278,7 @@ ALTER TABLE `timetable`
 -- 限制表 `timetablecourse`
 --
 ALTER TABLE `timetablecourse`
-  ADD CONSTRAINT `timetablecourse_ibfk_1` FOREIGN KEY (`timetableID`) REFERENCES `timetable` (`timetableID`),
-  ADD CONSTRAINT `timetablecourse_ibfk_2` FOREIGN KEY (`courseID`) REFERENCES `course` (`courseID`);
+  ADD CONSTRAINT `timetablecourse_ibfk_1` FOREIGN KEY (`timetableID`) REFERENCES `timetable` (`timetableID`);
 
 --
 -- 限制表 `userassignmentcompleted`
