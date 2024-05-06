@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- 主机： 127.0.0.1
--- 生成日期： 2024-04-27 20:32:32
+-- 生成日期： 2024-05-06 20:10:27
 -- 服务器版本： 10.4.28-MariaDB
 -- PHP 版本： 8.2.4
 
@@ -53,6 +53,34 @@ CREATE TABLE `course` (
   `durationTime` enum('2','3') NOT NULL,
   `code` varchar(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- 转存表中的数据 `course`
+--
+
+INSERT INTO `course` (`courseID`, `courseName`, `courseSection`, `courseType`, `time`, `day`, `durationTime`, `code`) VALUES
+(1, 'asd', 2, 'T', '10:00:00', 'Monday', '2', 'ads'),
+(2, 'Algorithm and complexity', 2, 'K', '14:30:00', 'Thursday', '3', 'BIE 21033'),
+(3, 'fdsadfsa', 2, 'K', '20:30:00', 'Tuesday', '3', 'asdfasd'),
+(4, 'asdfasdf', 12, 'K', '12:30:00', 'Tuesday', '2', 'asdf');
+
+-- --------------------------------------------------------
+
+--
+-- 表的结构 `lecturerverify`
+--
+
+CREATE TABLE `lecturerverify` (
+  `userId` int(11) NOT NULL,
+  `sucess` tinyint(1) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- 转存表中的数据 `lecturerverify`
+--
+
+INSERT INTO `lecturerverify` (`userId`, `sucess`) VALUES
+(3, 0);
 
 -- --------------------------------------------------------
 
@@ -110,7 +138,8 @@ INSERT INTO `task` (`taskID`, `userID`, `taskTitle`, `dueDate`, `description`, `
 (27, 1, 'june 的 时间', '2024-06-04 00:00:00', '为什么世界这么大\n', 0),
 (28, 1, 'testing', '2024-03-06 00:00:00', '', 0),
 (29, 1, 'hello world', '2024-03-06 00:00:00', '', 0),
-(30, 1, 'asdfasdfa', '2024-03-06 00:00:00', '', 0);
+(30, 1, 'asdfasdfa', '2024-03-06 00:00:00', '', 0),
+(31, 3, 'Happy holiday ', '2024-05-01 00:00:00', 'yahoo', 0);
 
 -- --------------------------------------------------------
 
@@ -155,7 +184,8 @@ CREATE TABLE `user` (
 
 INSERT INTO `user` (`userID`, `username`, `email`, `password`, `userType`) VALUES
 (1, 'LCS', 'lingchiisung@gmail.com', '1234', 'student'),
-(2, 'ZX', 'zxkhoo141132@gmail.com', '123', 'student');
+(2, 'ZX', 'zxkhoo141132@gmail.com', '123', 'student'),
+(3, 'cs', 'ai210343@student.uthm.edu.my', '1234', 'lecturer');
 
 -- --------------------------------------------------------
 
@@ -184,6 +214,12 @@ ALTER TABLE `assignment`
 --
 ALTER TABLE `course`
   ADD PRIMARY KEY (`courseID`);
+
+--
+-- 表的索引 `lecturerverify`
+--
+ALTER TABLE `lecturerverify`
+  ADD PRIMARY KEY (`userId`);
 
 --
 -- 表的索引 `repeattask`
@@ -238,7 +274,7 @@ ALTER TABLE `assignment`
 -- 使用表AUTO_INCREMENT `course`
 --
 ALTER TABLE `course`
-  MODIFY `courseID` int(255) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `courseID` int(255) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- 使用表AUTO_INCREMENT `repeattask`
@@ -250,7 +286,7 @@ ALTER TABLE `repeattask`
 -- 使用表AUTO_INCREMENT `task`
 --
 ALTER TABLE `task`
-  MODIFY `taskID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=31;
+  MODIFY `taskID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=32;
 
 --
 -- 使用表AUTO_INCREMENT `timetable`
@@ -262,7 +298,7 @@ ALTER TABLE `timetable`
 -- 使用表AUTO_INCREMENT `user`
 --
 ALTER TABLE `user`
-  MODIFY `userID` int(255) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `userID` int(255) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- 限制导出的表
