@@ -237,10 +237,6 @@ public class Login_page {
         gbc.gridwidth = 2;
         panel.add(loginButton, gbc);
         
-//        gbc.gridx = 1;
-//        gbc.gridy = 3;
-//        panel.add(cancelButton, gbc);
-        
         gbc.gridx = 0;
         gbc.gridy = 6;
         gbc.gridwidth = 1;
@@ -266,7 +262,7 @@ public class Login_page {
                 String password = String.valueOf(passwordC);
                 user.setEmail(email);
                 user.setPassword(password);
-                user.setUserType(studentRadioButton.isSelected()? "Student":"Lecturer");
+                user.setUserType(studentRadioButton.isSelected()? "student":"lecturer");
                 
                 try {
 					if(user.Login(sql, user)) {
@@ -484,8 +480,20 @@ public class Login_page {
 
         verifyButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+            	int inputCode = 0;
+            	try {
+            	    inputCode = Integer.parseInt(code.getText());
+            	    // Proceed with the integer value
+            	} catch (NumberFormatException error) {
+            	    JOptionPane.showMessageDialog(null,
+            	        "Error: Please enter a valid integer.",
+            	        "Input Error",
+            	        JOptionPane.ERROR_MESSAGE);
+            	    return;
+            	}
+            	
             	//if user enter incorrect verification code
-                if (user.getSixDigitCode() != Integer.parseInt(code.getText())) {
+                if (user.getSixDigitCode() != inputCode) {
                     JOptionPane.showMessageDialog(vp, "Invalid verification code. Please try again.");
                     return;
                 }
@@ -521,6 +529,7 @@ public class Login_page {
         //when user click x button at pop-up window
         vp.addWindowListener(new WindowAdapter() {
         	public void windowClosing(WindowEvent e) {
+        		user.getTimer().cancel();
         		frame.setVisible(true);
         	}
         });

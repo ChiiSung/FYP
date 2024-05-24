@@ -32,14 +32,20 @@ public class User implements Serializable{
 	private Task[] task;
 	private RepeatTask[] repeatTask;
 	private Assignment[] assignment;
-	private Timetable[] timetable;
+	private Timetable timetable;
 	
 	//use to record the number in array to reduce the searching time
 	private int tasknow;
 	
 	//timer six digit code
-	Timer timer;
+	private Timer timer;
 
+	public Timer getTimer() {
+		return timer;
+	}
+	public void setTimer(Timer timer) {
+		this.timer = timer;
+	}
 	public int getUserID() {
 		return userID;
 	}
@@ -82,10 +88,10 @@ public class User implements Serializable{
 	public void setAssignment(Assignment[] assignment) {
 		this.assignment = assignment;
 	}
-	public Timetable[] getTimetable() {
+	public Timetable getTimetable() {
 		return timetable;
 	}
-	public void setTimetable(Timetable[] timetable) {
+	public void setTimetable(Timetable timetable) {
 		this.timetable = timetable;
 	}
 	public int getSixDigitCode() {
@@ -121,9 +127,10 @@ public class User implements Serializable{
 			public void run() {
 				if(x == 0) {
 					generateCode();
+					sendVerificationEmail(email);
 					x = 5*60;
 				}
-				String text = "<html>The 6-digit code is send to you email already.(Maka sure you email is correct)<br>Your Email: "+ email
+				String text = "<html>The 6-digit code is send to you email already. (Maka sure you email is correct)<br>Your Email: "+ email
 				+"<br> It will expired in "+ (int)(x/60) +"min "+ x%60 +"s" +"<html>";
 				info.setText(text); 
 				x--;
@@ -141,7 +148,7 @@ public class User implements Serializable{
 	@SuppressWarnings("finally")
 	public Boolean sendVerificationEmail(String userEmail) {
         // Your email configuration
-        final String username = "calendarsystemforfsktmstudent@gmail.com";
+        final String systemEmail = "calendarsystemforfsktmstudent@gmail.com";
         final String password = "bxxhkfkcuehrnyxk";
 		Boolean success = false;
 		
@@ -155,13 +162,13 @@ public class User implements Serializable{
         Session session = Session.getInstance(props,
             new Authenticator() {
                 protected PasswordAuthentication getPasswordAuthentication() {
-                    return new PasswordAuthentication(username, password);
+                    return new PasswordAuthentication(systemEmail, password);
                 }
             });
 
         try {
             Message message = new MimeMessage(session);
-            message.setFrom(new InternetAddress(username));
+            message.setFrom(new InternetAddress(systemEmail));
             message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(userEmail));
             message.setSubject("Email Verification Code");
             

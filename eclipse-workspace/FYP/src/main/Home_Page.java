@@ -26,12 +26,19 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.text.NumberFormatter;
 
 import com.toedter.calendar.JDateChooser;
@@ -45,6 +52,7 @@ public class Home_Page {
 	//Color of task
 	private Color taskColor = Color.CYAN;
 	private Color repeatColor = Color.PINK;
+	private Color assignmentColor = Color.GREEN;
 	private Color dayColor = Color.WHITE;
 	private Color todayColor = new Color(0,140,255);
 	
@@ -283,7 +291,7 @@ public class Home_Page {
 				}
 				public void mouseClicked(MouseEvent e) {
 					Date day = (Date)((JPanel)e.getComponent()).getClientProperty("Date");
-					addTaskInformation(day);
+					addTaskInformation(day, "Task");
 				}
 			});
 			
@@ -315,6 +323,24 @@ public class Home_Page {
 						taskCl = repeatColor;
 					}
 					JLabel task = labelTask(a, taskCl, dayPl[i], 2, login.user.getRepeatTask()[a]);
+					dayPl[i].add(task);
+					b++;
+				}
+				a++;
+			}
+			
+			//add assignment into calendar
+			sql.readAssignment(login.user);
+			a = 0;
+			while(a < login.user.getAssignment().length) {
+				//add assignment into calendar
+				if(a<login.user.getAssignment().length && assignmentCb.isSelected() && Arrays.asList(login.user.getAssignment()[a].getDueDate()).contains(calDay)) {
+					if(login.user.getAssignment()[a].getCompleted()) {
+						taskCl = null;
+					}else {
+						taskCl = assignmentColor;
+					}
+					JLabel task = labelTask(a, taskCl, dayPl[i], 3, login.user.getAssignment()[a]);
 					dayPl[i].add(task);
 					b++;
 				}
@@ -422,205 +448,340 @@ public class Home_Page {
 		JButton addTaskBt = new JButton("Add Task");
 		addTaskBt.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				addTaskInformation(pageDate);
+				addTaskInformation(pageDate, "Task");
 			}
 		});
-		JButton editTimetableBt = new JButton("Edit Timetable");
-		editTimetableBt.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				TimeTable tt = new TimeTable(login, sql);
-			}
-		});
+		//lecturer have another function like adding assignment
+		JButton dependsUserFunctionBt = null;
+		if(!login.user.getUserType().equals("Lecturer")) {
+			dependsUserFunctionBt = new JButton("Edit Timetable");
+			dependsUserFunctionBt.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					TimeTable tt = new TimeTable(login, sql);
+				}
+			});
+		}else {
+			dependsUserFunctionBt = new JButton("Add Assignment");
+			dependsUserFunctionBt.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					addTaskInformation(pageDate, "Assignment");
+				}
+			});
+		}
 		JButton viewHistoryBt = new JButton("View History");
 		viewHistoryBt.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				History_Page hp = new History_Page(login, sql);
 			}
 		});
-		downPl.add(addTaskBt);downPl.add(editTimetableBt);downPl.add(viewHistoryBt);
+		downPl.add(addTaskBt);
+		downPl.add(dependsUserFunctionBt);
+		downPl.add(viewHistoryBt);
+		
 		
 		leftPanel.add(usernameLb);
 		leftPanel.add(upPl);
 		leftPanel.add(downPl);
 	}
 	
-
-	//build a task information page for use to add task
-	private void addTaskInformation(Date date) {
-		Date endRepeatDate = (Date)date.clone();
-		endRepeatDate.setDate(endRepeatDate.getDate()+1);
-		float align = Component.LEFT_ALIGNMENT;
+	private void editAssignmentForm(Task task) {
 		
-		//container of component of task information form
-		JDialog ti = new JDialog();
-		ti.setTitle("Task Information");
-		JPanel panel = new JPanel();
-		panel.setLayout(new BoxLayout(panel,BoxLayout.Y_AXIS));
-		
-		//component in task information form
-		JLabel titleLb = new JLabel("Task Information", SwingConstants.CENTER);
-		JLabel taskTypeLb = new JLabel("Task Type:");
-		taskTypeLb.setAlignmentX(align);
-		JComboBox<String> taskTypeCb = new JComboBox<>(new String[] {"Task", "Assignment"});
-		taskTypeCb.setMaximumSize(new Dimension(500, 50));
-		JLabel taskTitleLb = new JLabel("Task Title");
-		taskTitleLb.setAlignmentX(align);
-		JTextField tasktitleTF = new JTextField();
-		tasktitleTF.setMaximumSize(new Dimension(500, 50));
-		JLabel duedateLb = new JLabel("Due Date:");
-		duedateLb.setAlignmentX(align);
-		JDateChooser duedateDC = new JDateChooser();
-		duedateDC.setDateFormatString("yyyy-MM-dd");
-		duedateDC.setDate(date);
-		duedateDC.setMaximumSize(new Dimension(500, 50));
-		JLabel repeatLb = new JLabel("Repeat Task:");
-		repeatLb.setAlignmentX(align);
-		JComboBox<String> repeatTypeCb = new JComboBox<>(new String[] {"None", "Daily", "Weekly", "Monthly"});
-		repeatTypeCb.setMaximumSize(new Dimension(500, 50));
-		
-		//repeat task component
-		JLabel repeatfrequencyLb = new JLabel("Repeat frequency");
-		repeatfrequencyLb.setAlignmentX(align);
-		SpinnerNumberModel spinnerModel = new SpinnerNumberModel(2, 1, 1000, 1);
-		JSpinner repeatfrequencyTF = new JSpinner(spinnerModel);
-		repeatfrequencyTF.setMaximumSize(new Dimension(500, 50));
-		JComponent editor = repeatfrequencyTF.getEditor();
-		JSpinner.DefaultEditor spinnerEditor = (JSpinner.DefaultEditor)editor;
-		spinnerEditor.getTextField().setHorizontalAlignment(JTextField.LEFT);
-		JFormattedTextField txt = ((JSpinner.NumberEditor) repeatfrequencyTF.getEditor()).getTextField();
-		((NumberFormatter) txt.getFormatter()).setAllowsInvalid(false);
-		JLabel enddateLb = new JLabel("End Repeat Date:");
-		enddateLb.setAlignmentX(align);
-		JDateChooser enddateDC = new JDateChooser();
-		enddateDC.setDateFormatString("yyyy-MM-dd");
-		enddateDC.setDate(endRepeatDate);
-		enddateDC.setMaximumSize(new Dimension(500, 50));
-		repeatfrequencyLb.setVisible(false);
-		repeatfrequencyTF.setVisible(false);
-		enddateLb.setVisible(false);
-		enddateDC.setVisible(false);
-		
-		//change date when frequency change
-		repeatfrequencyTF.addChangeListener(new ChangeListener() {
-			public void stateChanged(ChangeEvent e) {
-				frequencyChangeToDate(repeatTypeCb, repeatfrequencyTF, duedateDC, enddateDC);;
-			}
-		});
-		
-		 enddateDC.addPropertyChangeListener(new PropertyChangeListener() {
-            public void propertyChange(PropertyChangeEvent evt) {
-            	dateChangeToFrequency(repeatTypeCb, repeatfrequencyTF, duedateDC, enddateDC);;
-            }
-        });
-		
-		//assignment component
-		JLabel courseLb = new JLabel("Course Name:");
-		courseLb.setAlignmentX(align);
-		JComboBox<String> courseCb = new JComboBox<>(new String[] {"Data Science - BIT314302"});
-		courseCb.setMaximumSize(new Dimension(500, 50));
-		courseLb.setVisible(false);
-		courseCb.setVisible(false);
-		
-		JLabel descriptionLb = new JLabel("Description:");
-		descriptionLb.setAlignmentX(align);
-		JTextArea descriptionTF = new JTextArea();
-		JButton addBt = new JButton("Add");
-		
-		panel.add(titleLb);
-		panel.add(taskTypeLb);
-		panel.add(taskTypeCb);
-		panel.add(taskTitleLb);
-		panel.add(tasktitleTF);
-		panel.add(duedateLb);
-		panel.add(duedateDC);
-		panel.add(repeatLb);
-		panel.add(repeatTypeCb);
-		panel.add(courseLb);
-		panel.add(courseCb);
-		panel.add(repeatfrequencyLb);
-		panel.add(repeatfrequencyTF);
-		panel.add(enddateLb);
-		panel.add(enddateDC);
-		panel.add(descriptionLb);
-		panel.add(descriptionTF);
-		panel.add(addBt);
-
-		//change the table when user select the task type
-		taskTypeCb.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				if(taskTypeCb.getSelectedItem().equals("Assignment")) {
-					repeatTypeCb.setSelectedIndex(0);
-					repeatfrequencyLb.setVisible(false);
-					repeatfrequencyTF.setVisible(false);
-					enddateLb.setVisible(false);
-					enddateDC.setVisible(false);
-					courseLb.setVisible(true);
-					courseCb.setVisible(true);
-					repeatLb.setVisible(false);
-					repeatTypeCb.setVisible(false);
-				}else if(taskTypeCb.getSelectedItem().equals("Task")){
-					courseLb.setVisible(false);
-					courseCb.setVisible(false);
-					repeatLb.setVisible(true);
-					repeatTypeCb.setVisible(true);
-				}
-			}
-		});
-		//change the table when user select the repeat type
-		repeatTypeCb.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				String content = (String)repeatTypeCb.getSelectedItem();
-				if(content.equals("None")) {
-					repeatfrequencyLb.setVisible(false);
-					repeatfrequencyTF.setVisible(false);
-					enddateLb.setVisible(false);
-					enddateDC.setVisible(false);
-					duedateLb.setText("Due Date");
-				}else{
-					repeatfrequencyLb.setVisible(true);
-					repeatfrequencyTF.setVisible(true);
-					enddateLb.setVisible(true);
-					enddateDC.setVisible(true);
-					duedateLb.setText("Start Date");
-				}
-			}
-		});
-		//save task information
-		addBt.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				if(repeatTypeCb.getSelectedIndex() == 0) {
-					//task
-					Task task;
-					task = new Task();
-					task.setTaskTitle(tasktitleTF.getText());
-					task.setDueDate(date);
-					task.setDescription(descriptionTF.getText());
-					task.saveTask(sql, login.user.getUserID());
-				}else {
-					//repeat task
-					RepeatTask repeatTask;
-					repeatTask = new RepeatTask();
-					repeatTask.setTaskTitle(tasktitleTF.getText());
-					repeatTask.setDueDate(date);
-					repeatTask.setDescription(descriptionTF.getText());
-					repeatTask.setRepeatType((String)repeatTypeCb.getSelectedItem());
-					repeatTask.setFrequencyRepeat((int)repeatfrequencyTF.getValue());
-					repeatTask.setEndDate(enddateDC.getDate());
-					repeatTask.saveTask(sql, login.user.getUserID());
-				}
-				
-				//close this pop-up form
-				ti.dispose();
-				resetCalendar(rightPanel);
-			}
-		});
-		
-		ti.getContentPane().add(panel, BorderLayout.CENTER);
-        ti.setSize(330, 600);
-        ti.setLocationRelativeTo(null); // Center the frame on the screen
-        ti.setVisible(true);
 	}
+
+	private void addTaskInformation(Date date, String type) {
+	    Date endRepeatDate = (Date) date.clone();
+	    endRepeatDate.setDate(endRepeatDate.getDate() + 1);
+	    float align = Component.LEFT_ALIGNMENT;
+
+	    // container of component of task information form
+	    JDialog ti = new JDialog();
+	    ti.setTitle("Task Information");
+	    JPanel panel = new JPanel();
+	    panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+
+	    // component in task information form
+	    JLabel titleLb = new JLabel("Task Information", SwingConstants.CENTER);
+	    JLabel taskTypeLb = new JLabel("Task Type:");
+	    taskTypeLb.setAlignmentX(align);
+	    String[] taskType = login.user.getUserType().equals("Lecturer") ? new String[]{"Task", "Assignment"} : new String[]{"Task"};
+	    JComboBox<String> taskTypeCb = new JComboBox<>(taskType);
+	    taskTypeCb.setMaximumSize(new Dimension(500, 50));
+	    JLabel taskTitleLb = new JLabel("Task Title");
+	    taskTitleLb.setAlignmentX(align);
+	    JTextField tasktitleTF = new JTextField();
+	    tasktitleTF.setMaximumSize(new Dimension(500, 50));
+	    JLabel duedateLb = new JLabel("Due Date:");
+	    duedateLb.setAlignmentX(align);
+	    JDateChooser duedateDC = new JDateChooser();
+	    duedateDC.setDateFormatString("yyyy-MM-dd");
+	    duedateDC.setDate(date);
+	    duedateDC.setMaximumSize(new Dimension(500, 50));
+	    JLabel repeatLb = new JLabel("Repeat Task:");
+	    repeatLb.setAlignmentX(align);
+	    JComboBox<String> repeatTypeCb = new JComboBox<>(new String[]{"None", "Daily", "Weekly", "Monthly"});
+	    repeatTypeCb.setMaximumSize(new Dimension(500, 50));
+
+	    // repeat task component
+	    JLabel repeatfrequencyLb = new JLabel("Repeat frequency");
+	    repeatfrequencyLb.setAlignmentX(align);
+	    SpinnerNumberModel spinnerModel = new SpinnerNumberModel(2, 1, 1000, 1);
+	    JSpinner repeatfrequencyTF = new JSpinner(spinnerModel);
+	    repeatfrequencyTF.setMaximumSize(new Dimension(500, 50));
+	    JComponent editor = repeatfrequencyTF.getEditor();
+	    JSpinner.DefaultEditor spinnerEditor = (JSpinner.DefaultEditor) editor;
+	    spinnerEditor.getTextField().setHorizontalAlignment(JTextField.LEFT);
+	    JFormattedTextField txt = ((JSpinner.NumberEditor) repeatfrequencyTF.getEditor()).getTextField();
+	    ((NumberFormatter) txt.getFormatter()).setAllowsInvalid(false);
+	    JLabel enddateLb = new JLabel("End Repeat Date:");
+	    enddateLb.setAlignmentX(align);
+	    JDateChooser enddateDC = new JDateChooser();
+	    enddateDC.setDateFormatString("yyyy-MM-dd");
+	    enddateDC.setDate(endRepeatDate);
+	    enddateDC.setMaximumSize(new Dimension(500, 50));
+	    repeatfrequencyLb.setVisible(false);
+	    repeatfrequencyTF.setVisible(false);
+	    enddateLb.setVisible(false);
+	    enddateDC.setVisible(false);
+
+	    // change date when frequency changes
+	    repeatfrequencyTF.addChangeListener(new ChangeListener() {
+	        public void stateChanged(ChangeEvent e) {
+	            frequencyChangeToDate(repeatTypeCb, repeatfrequencyTF, duedateDC, enddateDC);
+	        }
+	    });
+
+	    enddateDC.addPropertyChangeListener(new PropertyChangeListener() {
+	        public void propertyChange(PropertyChangeEvent evt) {
+	            dateChangeToFrequency(repeatTypeCb, repeatfrequencyTF, duedateDC, enddateDC);
+	        }
+	    });
+
+	    // assignment component
+	    JLabel courseSearchLb = new JLabel("Search Course:");
+	    courseSearchLb.setAlignmentX(align);
+	    JTextField courseSearchTF = new JTextField();
+	    courseSearchTF.setMaximumSize(new Dimension(500, 50));
+
+	    JLabel courseLb = new JLabel("Course Code:");
+	    courseLb.setAlignmentX(align);
+	    JComboBox<String> courseCb = new JComboBox<>();
+	    courseCb.setMaximumSize(new Dimension(500, 50));
+
+	    JLabel courseNameLb = new JLabel("Course Name:");
+	    courseNameLb.setAlignmentX(align);
+	    JTextField courseNameTF = new JTextField();
+	    courseNameTF.setMaximumSize(new Dimension(500, 50));
+
+	    JLabel sectionLb = new JLabel("Course Section:");
+	    sectionLb.setAlignmentX(align);
+	    JComboBox<String> sectionCb = new JComboBox<>();
+	    sectionCb.setMaximumSize(new Dimension(500, 50));
+
+	    JLabel descriptionLb = new JLabel("Description:");
+	    descriptionLb.setAlignmentX(align);
+	    JTextArea descriptionTF = new JTextArea();
+	    JButton addBt = new JButton("Add");
+
+	    panel.add(titleLb);
+	    panel.add(taskTypeLb);
+	    panel.add(taskTypeCb);
+	    panel.add(taskTitleLb);
+	    panel.add(tasktitleTF);
+	    panel.add(duedateLb);
+	    panel.add(duedateDC);
+	    panel.add(repeatLb);
+	    panel.add(repeatTypeCb);
+	    panel.add(courseSearchLb);
+	    panel.add(courseSearchTF);
+	    panel.add(courseLb);
+	    panel.add(courseCb);
+	    panel.add(courseNameLb);
+	    panel.add(courseNameTF);
+	    panel.add(sectionLb);
+	    panel.add(sectionCb);
+	    panel.add(repeatfrequencyLb);
+	    panel.add(repeatfrequencyTF);
+	    panel.add(enddateLb);
+	    panel.add(enddateDC);
+	    panel.add(descriptionLb);
+	    panel.add(descriptionTF);
+	    panel.add(addBt);
+
+	    // Initialize course components as hidden
+	    courseSearchLb.setVisible(false);
+	    courseSearchTF.setVisible(false);
+	    courseLb.setVisible(false);
+	    courseCb.setVisible(false);
+	    sectionLb.setVisible(false);
+	    sectionCb.setVisible(false);
+
+	    // Change the table when the user selects the task type
+	    taskTypeCb.addActionListener(new ActionListener() {
+	        public void actionPerformed(ActionEvent e) {
+	            if (taskTypeCb.getSelectedItem().equals("Assignment")) {
+	                repeatTypeCb.setSelectedIndex(0);
+	                repeatfrequencyLb.setVisible(false);
+	                repeatfrequencyTF.setVisible(false);
+	                enddateLb.setVisible(false);
+	                enddateDC.setVisible(false);
+	                courseSearchLb.setVisible(true);
+	                courseSearchTF.setVisible(true);
+	                courseLb.setVisible(true);
+	                courseCb.setVisible(true);
+	                courseNameLb.setVisible(true);
+	                courseNameTF.setVisible(true);
+	                sectionLb.setVisible(true);
+	                sectionCb.setVisible(true);
+	                repeatLb.setVisible(false);
+	                repeatTypeCb.setVisible(false);
+	            } else if (taskTypeCb.getSelectedItem().equals("Task")) {
+	                courseSearchLb.setVisible(false);
+	                courseSearchTF.setVisible(false);
+	                courseLb.setVisible(false);
+	                courseCb.setVisible(false);
+	                courseNameLb.setVisible(false);
+	                courseNameTF.setVisible(false);
+	                sectionLb.setVisible(false);
+	                sectionCb.setVisible(false);
+	                repeatLb.setVisible(true);
+	                repeatTypeCb.setVisible(true);
+	            }
+	        }
+	    });
+	    taskTypeCb.setSelectedItem(type);
+
+	    // Change the table when the user selects the repeat type
+	    repeatTypeCb.addActionListener(new ActionListener() {
+	        public void actionPerformed(ActionEvent e) {
+	            String content = (String) repeatTypeCb.getSelectedItem();
+	            if (content.equals("None")) {
+	                repeatfrequencyLb.setVisible(false);
+	                repeatfrequencyTF.setVisible(false);
+	                enddateLb.setVisible(false);
+	                enddateDC.setVisible(false);
+	                duedateLb.setText("Due Date");
+	            } else {
+	                repeatfrequencyLb.setVisible(true);
+	                repeatfrequencyTF.setVisible(true);
+	                enddateLb.setVisible(true);
+	                enddateDC.setVisible(true);
+	                duedateLb.setText("Start Date");
+	            }
+	        }
+	    });
+
+	    // Add functionality to search bar and update course and section combo boxes
+	    courseSearchTF.getDocument().addDocumentListener(new DocumentListener() {
+	        public void insertUpdate(DocumentEvent e) {
+	            updateCourseList();
+	        }
+
+	        public void removeUpdate(DocumentEvent e) {
+	            updateCourseList();
+	        }
+
+	        public void changedUpdate(DocumentEvent e) {
+	            updateCourseList();
+	        }
+
+	        private void updateCourseList() {
+	            String searchText = courseSearchTF.getText();
+	            List<Course> filteredCourses = searchCourses(searchText);
+	            updateCourseCodeAndSection(filteredCourses, courseCb, courseNameTF, sectionCb);
+	        }
+	    });
+
+	    courseCb.addActionListener(new ActionListener() {
+	        public void actionPerformed(ActionEvent e) {
+	            String selectedCourseCode = (String) courseCb.getSelectedItem();
+	            if (selectedCourseCode != null) {
+	                List<Course> filteredCourses = searchCourses(courseSearchTF.getText());
+	                updateSections(selectedCourseCode, filteredCourses, sectionCb);
+	                filteredCourses.stream()
+	                        .filter(c -> c.getCode().equals(selectedCourseCode))
+	                        .findFirst()
+	                        .ifPresent(c -> {
+	                            courseNameTF.setText(c.getCourseName());
+	                            updateSections(c.getCode(), filteredCourses, sectionCb);
+	                        });
+	            }
+	        }
+	    });
+
+	    // Save task information
+	    addBt.addActionListener(new ActionListener() {
+	        public void actionPerformed(ActionEvent e) {
+	        	if(taskTypeCb.getSelectedIndex() == 1) {
+	        		//assignment
+	        		Assignment asg = new Assignment();
+	        		asg.setTaskTitle(tasktitleTF.getText());
+	        		asg.setDueDate(duedateDC.getDate());
+	        		asg.setDescription(descriptionTF.getText());
+	        		asg.setCourse(new Course());
+	        		asg.getCourse().setCode((String)courseCb.getSelectedItem());
+	        		asg.getCourse().setCourseName((String)courseNameTF.getText());
+	        		asg.getCourse().setCourseSection(Integer.valueOf((String)sectionCb.getSelectedItem()));
+	        		sql.saveAssignment(login.user.getUserID(), asg);
+	        	}else if (repeatTypeCb.getSelectedIndex() == 0) {
+	                // task
+	                Task task = new Task();
+	                task.setTaskTitle(tasktitleTF.getText());
+	                task.setDueDate(duedateDC.getDate());
+	                task.setDescription(descriptionTF.getText());
+	                task.saveTask(sql, login.user.getUserID());
+	            } else {
+	                // repeat task
+	                RepeatTask repeatTask = new RepeatTask();
+	                repeatTask.setTaskTitle(tasktitleTF.getText());
+	                repeatTask.setDueDate(duedateDC.getDate());
+	                repeatTask.setDescription(descriptionTF.getText());
+	                repeatTask.setRepeatType((String) repeatTypeCb.getSelectedItem());
+	                repeatTask.setFrequencyRepeat((int) repeatfrequencyTF.getValue());
+	                repeatTask.setEndDate(enddateDC.getDate());
+	                repeatTask.saveTask(sql, login.user.getUserID());
+	            }
+
+	            // close this pop-up form
+	            ti.dispose();
+	            resetCalendar(rightPanel);
+	        }
+	    });
+
+	    ti.getContentPane().add(panel, BorderLayout.CENTER);
+	    ti.setSize(330, 600);
+	    ti.setLocationRelativeTo(null); // Center the frame on the screen
+	    ti.setVisible(true);
+	}
+
+	private void updateCourseCodeAndSection(List<Course> filteredCourses, JComboBox<String> courseCodeCb, JTextField courseNameTf, JComboBox<String> courseSectionCb) {
+	    courseCodeCb.removeAllItems();
+	    courseSectionCb.removeAllItems();
+
+	    Set<String> uniqueCourseCodes = new HashSet<>();
+	    filteredCourses.forEach(c -> uniqueCourseCodes.add(c.getCode()));
+
+	    uniqueCourseCodes.forEach(courseCodeCb::addItem);
+
+	    if (!filteredCourses.isEmpty()) {
+	        Course firstCourse = filteredCourses.get(0);
+	        courseNameTf.setText(firstCourse.getCourseName());
+	    }
+	}
+
+
+    private void updateSections(String selectedCourseCode, List<Course> filteredCourses, JComboBox<String> sectionCb) {
+        sectionCb.removeAllItems();
+        filteredCourses.stream()
+                .filter(c -> c.getCode().equals(selectedCourseCode))
+                .forEach(c -> sectionCb.addItem(String.valueOf(c.getCourseSection())));
+    }
+
 	
+	private List<Course> searchCourses(String searchText) {
+		List<Course> course = new ArrayList<Course>();
+	    sql.readCourse(searchText, course);
+	    return course;
+	}
 	
 	
 	//Display the task information entered
@@ -874,7 +1035,7 @@ public class Home_Page {
 				}else if(tasktype == 2) {
 					editTaskInformation(login.user.getRepeatTask()[(int)((JLabel)e.getComponent()).getClientProperty("TaskArray")]);
 				}else if(tasktype == 3) {
-					editTaskInformation(login.user.getAssignment()[(int)((JLabel)e.getComponent()).getClientProperty("TaskArray")]);
+					editAssignmentForm(task);
 				}
 			}
 		});

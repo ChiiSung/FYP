@@ -4,6 +4,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridLayout;
@@ -24,8 +25,7 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableModel;
 
-import object.Course;
-import object.SQLConnect;
+import object.*;
 
 public class Admin_page extends JFrame {
 	JFrame form = new JFrame();
@@ -60,6 +60,13 @@ public class Admin_page extends JFrame {
         addLecturerButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
             	approvalLecturerFrame();
+            	setVisible(false);
+            }
+        });
+        
+        viewLecturerButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+            	viewLecturerFrame();
             	setVisible(false);
             }
         });
@@ -143,7 +150,7 @@ public class Admin_page extends JFrame {
         cmbDay = new JComboBox<>(new String[]{"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday"});
 
         lblDuration = new JLabel("Duration Time:");
-        cmbDuration = new JComboBox<>(new String[]{"2", "3"});;
+        cmbDuration = new JComboBox<>(new String[]{"2", "3"});
 
         btnSave = new JButton("Save");
         btnSave.addActionListener(new ActionListener() {
@@ -411,13 +418,205 @@ public class Admin_page extends JFrame {
     }
     
     public void approvalLecturerFrame() {
-    	form = new JFrame("Approval Lecturer Form");
-        form.setSize(400, 300);
-        form.setLayout(new GridLayout(8, 2));
+        form = new JFrame("Approval Lecturer Form");
+        form.setSize(800, 600);
+        form.setLayout(new BorderLayout());
+
+        JPanel mainPanel = new JPanel();
+        mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
+        approvalListPanel(mainPanel);
+
+        JScrollPane scrollPane = new JScrollPane(mainPanel);
+        form.add(scrollPane, BorderLayout.CENTER);
 
         form.setLocationRelativeTo(null);
         form.setVisible(true);
         closeFrameSetting();
+    }
+
+    public void approvalListPanel(JPanel mainPanel) {
+        mainPanel.removeAll(); // Clear the panel before adding new components
+
+        User[] lecturer = sql.addLecturer();
+
+        // Create title row panel
+        JPanel titlePanel = new JPanel(new GridLayout(1, 3));
+        titlePanel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+        titlePanel.setMaximumSize(new Dimension(1000, 80));
+        JLabel nameLabel = new JLabel("Name");
+        JLabel emailLabel = new JLabel("Email");
+        JLabel approvalLabel = new JLabel("Approval");
+        nameLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        emailLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        approvalLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        titlePanel.add(nameLabel);
+        titlePanel.add(emailLabel);
+        titlePanel.add(approvalLabel);
+        mainPanel.add(titlePanel);
+
+        for (int i = 0; i < lecturer.length; i++) {
+            // Create JPanel for each row
+            JPanel rowPanel = new JPanel(new GridLayout(1, 3));
+            rowPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+            rowPanel.setMaximumSize(new Dimension(1000, 80));
+            rowPanel.setMinimumSize(new Dimension(100, 60));
+
+            // Create JLabels for name and email
+            JLabel nameLabelRow = new JLabel(lecturer[i].getUsername());
+            JLabel emailLabelRow = new JLabel(lecturer[i].getEmail());
+            JPanel buttonPanel = new JPanel();
+            JButton approveButton = new JButton("Approve");
+            approveButton.setActionCommand(String.valueOf(i));
+            JButton rejectButton = new JButton("Reject");
+            rejectButton.setActionCommand(String.valueOf(i));
+
+            approveButton.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    int a = Integer.valueOf(e.getActionCommand());
+                    if (JOptionPane.YES_OPTION == JOptionPane.showConfirmDialog(mainPanel,
+                            "Are you sure to approve Dr." + lecturer[a].getUsername() + "?",
+                            "Approval lecturer registration",
+                            JOptionPane.YES_NO_OPTION)) {
+                        sql.lecturerApproval(true, lecturer[a].getUserID());
+                        clearPanel(mainPanel);
+                        approvalListPanel(mainPanel);
+                        mainPanel.revalidate();
+                        mainPanel.repaint();
+                    }
+                }
+            });
+            
+            rejectButton.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    int a = Integer.valueOf(e.getActionCommand());
+                    if (JOptionPane.YES_OPTION == JOptionPane.showConfirmDialog(mainPanel,
+                            "Are you sure to reject Dr." + lecturer[a].getUsername() + "?\n The registration will be removed!",
+                            "Reject lecturer registration",
+                            JOptionPane.YES_NO_OPTION)) {
+                        sql.deleteLecturer(lecturer[a].getUserID());
+                        clearPanel(mainPanel);
+                        approvalListPanel(mainPanel);
+                        mainPanel.revalidate();
+                        mainPanel.repaint();
+                    }
+                }
+            });
+
+            // Set horizontal alignment for labels
+            nameLabelRow.setHorizontalAlignment(SwingConstants.CENTER);
+            emailLabelRow.setHorizontalAlignment(SwingConstants.CENTER);
+
+            // Add components to row panel
+            rowPanel.add(nameLabelRow);
+            rowPanel.add(emailLabelRow);
+            buttonPanel.add(approveButton);
+            buttonPanel.add(rejectButton);
+            rowPanel.add(buttonPanel);
+
+            // Add row panel to main panel
+            mainPanel.add(rowPanel);
+        }
+
+        mainPanel.revalidate();
+        mainPanel.repaint();
+        setFont(form);
+    }
+    
+    public void viewLecturerFrame() {
+        form = new JFrame("View Lecturer Information");
+        form.setSize(800, 600);
+        form.setLayout(new BorderLayout());
+
+        JPanel mainPanel = new JPanel();
+        mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
+        viewListPanel(mainPanel);
+
+        JScrollPane scrollPane = new JScrollPane(mainPanel);
+        form.add(scrollPane, BorderLayout.CENTER);
+
+        form.setLocationRelativeTo(null);
+        form.setVisible(true);
+        closeFrameSetting();
+    }
+    
+    public void viewListPanel(JPanel mainPanel) {
+    	mainPanel.removeAll(); // Clear the panel before adding new components
+
+        User[] lecturer = sql.readLecturer();
+
+        // Create title row panel
+        JPanel titlePanel = new JPanel(new GridLayout(1, 3));
+        titlePanel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+        titlePanel.setMaximumSize(new Dimension(1000, 80));
+        JLabel nameLabel = new JLabel("Name");
+        JLabel emailLabel = new JLabel("Email");
+        JLabel approvalLabel = new JLabel("Delete");
+        nameLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        emailLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        approvalLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        titlePanel.add(nameLabel);
+        titlePanel.add(emailLabel);
+        titlePanel.add(approvalLabel);
+        mainPanel.add(titlePanel);
+        
+        //if there is not lecturer
+        if(lecturer == null) {
+        	
+        }
+
+        for (int i = 0; i < lecturer.length; i++) {
+            // Create JPanel for each row
+            JPanel rowPanel = new JPanel(new GridLayout(1, 3));
+            rowPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+            rowPanel.setMaximumSize(new Dimension(1000, 80));
+            rowPanel.setMinimumSize(new Dimension(100, 60));
+
+            // Create JLabels for name and email
+            JLabel nameLabelRow = new JLabel(lecturer[i].getUsername());
+            JLabel emailLabelRow = new JLabel(lecturer[i].getEmail());
+            JPanel buttonPanel = new JPanel();
+            JButton deleteButton = new JButton("Delete");
+            deleteButton.setActionCommand(String.valueOf(i));
+
+            deleteButton.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    int a = Integer.valueOf(e.getActionCommand());
+                    if (JOptionPane.YES_OPTION == JOptionPane.showConfirmDialog(mainPanel,
+                            "Are you sure to delete Dr." + lecturer[a].getUsername() + "?",
+                            "Delete lecturer",
+                            JOptionPane.YES_NO_OPTION)) {
+                        sql.deleteLecturer(lecturer[a].getUserID());
+                        clearPanel(mainPanel);
+                        viewListPanel(mainPanel);
+                        mainPanel.revalidate();
+                        mainPanel.repaint();
+                    }
+                }
+            });
+
+            // Set horizontal alignment for labels
+            nameLabelRow.setHorizontalAlignment(SwingConstants.CENTER);
+            emailLabelRow.setHorizontalAlignment(SwingConstants.CENTER);
+
+            // Add components to row panel
+            rowPanel.add(nameLabelRow);
+            rowPanel.add(emailLabelRow);
+            buttonPanel.add(deleteButton);
+            rowPanel.add(buttonPanel);
+
+            // Add row panel to main panel
+            mainPanel.add(rowPanel);
+        }
+
+        mainPanel.revalidate();
+        mainPanel.repaint();
+        setFont(form);
+    }
+
+    public void clearPanel(JPanel panel) {
+        panel.removeAll();
+        panel.revalidate();
+        panel.repaint();
     }
     
     public void closeFrameSetting() {
@@ -467,7 +666,8 @@ class TimeSelector extends JPanel {
         setLayout(new FlowLayout());
 
         hourComboBox = new JComboBox<>(new String[]{"8", "9", "10", "11", "12","13","14","15","16","17","18","19","20","21","22","23"});
-        minuteComboBox = new JComboBox<>(new String[]{"00", "15", "30", "45"});
+        minuteComboBox = new JComboBox<>(new String[]{"00"});
+        minuteComboBox.setEditable(false);
 
         add(hourComboBox);
         add(new JLabel(":"));
